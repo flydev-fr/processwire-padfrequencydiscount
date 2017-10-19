@@ -1,0 +1,139 @@
+<?php namespace ProcessWire;
+
+/**
+*
+* PadFrequencyDiscount
+*
+* See README.md for usage instructions.
+*
+* @author Tabea David <info@justonestep.de>
+* @version 0.0.1
+* @copyright Copyright (c) 2017
+* @see https://github.com/justonestep/processwire-padfrequencydiscount
+* @see http://www.processwire.com
+*/
+
+/**
+* Class PadFrequencyDiscount
+*/
+class PadFrequencyDiscount extends WireData implements Module {
+
+  protected $cartManager;
+  protected $dbname = 'padcart';
+  protected $session_id;
+  protected $discountPages;
+
+  /**
+   * Get module information
+   *
+   * @return array
+   */
+  public static function getModuleInfo() {
+    return array(
+      'title' => 'Freqency Discount',
+      'version' => 001,
+      'summary' => 'ProcessWire module that adds the possibility to add frequency discounts by product category. ',
+      'href' => 'https://github.com/justonestep/processwire-padfrequencydiscount',
+      'singular' => true,
+      'autoload' => true,
+      'icon' => 'money',
+      'requires' => array('PadLoper')
+    );
+  }
+
+  /**
+   * Initialize the module
+   *
+   * ProcessWire calls this when the module is loaded. For 'autoload' modules, this will be called
+   * when ProcessWire's API is ready. As a result, this is a good place to attach hooks.
+   */
+  public function init() {
+    $this->session_id = session_id();
+    $this->cartManager = $this->modules->get('PadCart');
+    $this->discountPages = $this->pages->find("template={$this->discount_template}");
+    $this->addHookBefore('PadCart::getCart', $this, 'handleFrequencyDiscount');
+  }
+
+  /**
+   * Handle frequency discount
+   *
+   * @param HookEvent $event
+   */
+  public function ___handleFrequencyDiscount(HookEvent $event) {
+    $this->removeFrequencyDiscount();
+    if ((int)$this->page->template->id === (int)$this->checkout_template) $this->addFrequencyDiscount();
+  }
+
+  /**
+   * Remove frequency discount
+   * remove all frequency-discount items from cart
+   */
+  private function removeFrequencyDiscount() {
+    foreach ($this->discountPages as $p) {
+      $cartRowId = $this->cartManager->checkIfProductInCart($p->id);
+      if ($cartRowId) $this->cartManager->removeProduct($cartRowId);
+    }
+  }
+
+  /**
+   * Add frequency discount
+   */
+  private function addFrequencyDiscount() {
+    $productsInCart = $this->getProductsInCart();
+
+    // loop over all frequency possibilities
+    foreach ($this->discountPages as $p) {
+      $categoryId = $p->{$this->categoryfield}->id;
+      $productsInCartWithCat = $this->getProductsFromCartWithCategory($productsInCart, $categoryId);
+
+      // get quantity
+      $qtyByCategory = count($productsInCartWithCat) ? $this->getQtyByCategory($productsInCart, $productsInCartWithCat) : 0;
+
+      // add frequency discount as product
+      if ($qtyByCategory >= $p->{$this->quantityfield}) $this->cartManager->addProduct($p->id, $qtyByCategory);
+    }
+  }
+
+  /**
+   * Get all products from cart with certain category
+   *
+   * @param array $productsInCart
+   * @param int $categoryId
+   * @return array
+   */
+  private function getProductsFromCartWithCategory($productsInCart, $categoryId) {
+    $productIds = implode(array_keys($productsInCart), '|'); // make pw selector ready
+    return $this->pages->findIds("id=$productIds,{$this->categoryfield}={$categoryId}");
+  }
+
+  /**
+   * Get Quantities by category
+   * by getting intersection from arrays
+   *
+   * @param array $productsInCart
+   * @param array $productsInCartWithCat
+   * @return int
+   */
+  private function getQtyByCategory($productsInCart, $productsInCartWithCat) {
+    $intersection = array_intersect_key($productsInCart, array_flip($productsInCartWithCat));
+
+    // count qtys from intersection
+    // summarize quantities from products with certain category in cart
+    return count($intersection) ? array_sum($intersection) : 0;
+  }
+
+  /**
+   * Get all product ids and quantities in cart by session id
+   * no category restriction
+   *
+   * return scheme: array('id' => 'quantity')
+   * @return array
+   */
+  private function getProductsInCart() {
+    $sql = "SELECT product_id, qty FROM {$this->dbname} WHERE sess_id = :sess_id AND qty > 0";
+    $sth = $this->database->prepare($sql);
+    $sth->bindParam(":sess_id", $this->session_id);
+    $sth->execute();
+    return $sth->fetchAll(\PDO::FETCH_KEY_PAIR);
+  }
+}
