@@ -31,4 +31,4 @@ Add a new page, assign the previously created frequency discount template and ad
 |--------------------|-------|----------|----------|
 | Frequency Discount | -3    | 3        | product  |
 
-![Checkout Product Table](https://github.com/justonestep/processwire-padfrequencydiscount/blob/master/checkout-table.jpg)
+![Checkout Product Table](https://github.com/justb3a/processwire-padfrequencydiscount/blob/master/checkout-table.jpg)
