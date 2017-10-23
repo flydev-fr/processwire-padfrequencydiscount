@@ -8,15 +8,16 @@ If you've never heard of PadLoper - it’s an easy and flexible eCommerce platfo
 ## Howto
 
 1. Download and install the module
-2. Add template for frequency discount pages (*shop-item-discount* for example) and add the following fields (call them like you want it): 
+2. Add template for frequency discount pages (*shop-item-discount* for example) and add the following fields (name them as you like): 
     - **title** – will be shown as product title
     - **pad_price** *(float)* – must be the same field which is  set in module settings from PadCart as pricefield; later you have to enter a negative value, all products with this category will get this discount per product
-    - **quantity** *(Integer)* – how many products the customer needs to buy at least to get a frequency discount
+    - **quantity** *(Integer)* – minimum amount of products needed for the discount
     - **category** *(Options)* – must be the same field as used as category in the product template(s), it holds the category for which the discount counts
 3. Edit the previously installed module, assign templates and fields
     - templates for checkout and frequency discount
     - fields used as category and quantity
-4. Add pages for each frequency discount per product category
+4. Edit **PadCart** module, add frequency discount template as product template
+5. Add pages for each frequency discount per product category
 
 Well, that's all.  
 Add some products with a specific category to the cart, if the number exceeds the configured quantity, the checkout product table gets one more row containing the frequency discount.
