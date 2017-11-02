@@ -1,7 +1,6 @@
 <?php namespace ProcessWire;
 
 /**
-*
 * PadFrequencyDiscount
 *
 * See README.md for usage instructions.
@@ -51,7 +50,46 @@ class PadFrequencyDiscount extends WireData implements Module {
     $this->session_id = session_id();
     $this->cartManager = $this->modules->get('PadCart');
     $this->discountPages = $this->pages->find("template={$this->discount_template}");
-    $this->addHookBefore('PadCart::getCart', $this, 'handleFrequencyDiscount');
+    $this->addHookBefore('PadCart::getCart', $this, 'handleFrequencyDiscount', array('priority' => 10));
+
+    $this->addHookAfter('PadCart::getQty', $this, 'removeFrequencyDiscountItemsFromQty');
+    $this->addHookAfter('PadCart::getNumberOfTitles', $this, 'removeFrequencyDiscountItemFromNumberOfTitles');
+  }
+
+
+  /**
+   * Handle coupon codes
+   *
+   * @param HookEvent $event
+   */
+  public function removeFrequencyDiscountItemFromNumberOfTitles(HookEvent $event) {
+    $products = $event->object->getCartRaw();
+
+    $count = $event->return;
+    foreach ($products as $p) {
+      $product = $this->pages->get($p->product_id);
+      if ($product->template === $this->templates->get($this->discount_template)) $count = $count - 1;
+    }
+
+    $event->return = $count;
+  }
+
+
+  /**
+   * Handle coupon codes
+   *
+   * @param HookEvent $event
+   */
+  public function removeFrequencyDiscountItemsFromQty(HookEvent $event) {
+    $products = $event->object->getCartRaw();
+    $templateIdCoupon = (int)$this->templates->get($this->discount_template)->id;
+    $count = $event->return;
+    foreach ($products as $p) {
+      $product = $this->pages->get($p->product_id);
+      if ((int)$product->template->id === $templateIdCoupon) $count = $count - $p->qty;
+    }
+
+    $event->return = $count;
   }
 
   /**
