@@ -50,7 +50,7 @@ class PadFrequencyDiscount extends WireData implements Module {
     $this->session_id = session_id();
     $this->cartManager = $this->modules->get('PadCart');
     $this->discountPages = $this->pages->find("template={$this->discount_template}");
-    $this->addHookBefore('PadCart::getCart', $this, 'handleFrequencyDiscount', array('priority' => 10));
+    $this->addHookBefore('PadCart::getCart', $this, 'handleFrequencyDiscount', array('priority' => 50));
 
     $this->addHookAfter('PadCart::getQty', $this, 'removeFrequencyDiscountItemsFromQty');
     $this->addHookAfter('PadCart::getNumberOfTitles', $this, 'removeFrequencyDiscountItemFromNumberOfTitles');
@@ -118,6 +118,16 @@ class PadFrequencyDiscount extends WireData implements Module {
    */
   private function addFrequencyDiscount() {
     $productsInCart = $this->getProductsInCart();
+
+    // check if A) PadCouponCode module is installed and B) disable_for_couponcode is activated
+    if ($this->modules->isInstalled('PadCouponCode') && $this->disable_for_couponcode) {
+      $tName = $this->modules->get('PadCouponCode')->getTemplateName();
+      $ids = implode('|', array_keys($productsInCart));
+
+      // check whether a page with template=pad_couponcode is present
+      // if this is the case: do not add frequency discount
+      if ($this->pages->count("id={$ids}, template={$tName}") >= 1) return;
+    }
 
     // loop over all frequency possibilities
     foreach ($this->discountPages as $p) {

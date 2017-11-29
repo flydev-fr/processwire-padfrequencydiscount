@@ -13,7 +13,8 @@ class PadFrequencyDiscountConfig extends ModuleConfig {
       'checkout_template' => '',
       'discount_template' => '',
       'categoryfield' => '',
-      'quantityfield' => ''
+      'quantityfield' => '',
+      'disable_for_couponcode' => false
     );
   }
 
@@ -41,7 +42,6 @@ class PadFrequencyDiscountConfig extends ModuleConfig {
           $field->addOption($key, $template);
         }
     }
-    // if (isset($data['checkout_template'])) $field->value = $data['checkout_template'];
     $inputfields->add($field);
 
     $field = $this->modules->get('InputfieldSelect');
@@ -58,7 +58,6 @@ class PadFrequencyDiscountConfig extends ModuleConfig {
           $field->addOption($key, $template);
         }
     }
-    // if (isset($data['discount_template'])) $field->value = $data['discount_template'];
     $inputfields->add($field);
 
     $field = $this->modules->get('InputfieldSelect');
@@ -68,7 +67,6 @@ class PadFrequencyDiscountConfig extends ModuleConfig {
     $field->description = __('You can choose any options field from your system - it will use that as a category field.');
     $field->icon = 'tag';
     foreach ($this->fields->find('type=FieldtypeOptions') as $f) $field->addOption($f->name, $f->title);
-    // if (isset($data['categoryfield'])) $field->value = $data['categoryfield'];
     $inputfields->add($field);
 
     $field = $this->modules->get('InputfieldSelect');
@@ -78,7 +76,13 @@ class PadFrequencyDiscountConfig extends ModuleConfig {
     $field->description = __('You can choose any options field from your system - it will use that as a quantity field.');
     $field->icon = 'cubes';
     foreach ($this->fields->find('type=FieldtypeInteger') as $f) $field->addOption($f->name, $f->title);
-    // if (isset($data['quantityfield'])) $field->value = $data['quantityfield'];
+    $inputfields->add($field);
+
+    $field = $this->modules->get('InputfieldCheckbox');
+    $field->attr('name', 'disable_for_couponcode');
+    $field->columnWidth = 50;
+    $field->label = $this->_('May not be assigned in conjunction with a coupon code.');
+    if (!$this->modules->isInstalled('PadCouponCode')) $field->collapsed = Inputfield::collapsedHidden;
     $inputfields->add($field);
 
     return $inputfields;
