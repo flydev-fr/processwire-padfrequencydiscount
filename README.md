@@ -1,3 +1,7 @@
+# WARNING: This repository is no longer maintained :warning:
+
+> This repository will not be updated. The repository will be kept available in read-only mode.
+
 # PadLoper Frequency Discount
 
 ProcessWire module that adds the possibility to add frequency discounts by product category.
